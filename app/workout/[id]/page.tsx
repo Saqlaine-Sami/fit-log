@@ -1,3 +1,5 @@
+import WorkoutActions from "../../components/WorkoutActions";
+
 type Workout = {
   id: number;
   name: string;
@@ -62,7 +64,7 @@ export default async function WorkoutDetails({
     <main className="min-h-screen bg-black px-6 py-12 md:py-20">
       <div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-2 md:gap-14">
 
-        {/* Left - Image */}
+        {/* Image */}
         <div className="overflow-hidden rounded-2xl bg-zinc-950">
           <img
             src={workout.image}
@@ -71,10 +73,10 @@ export default async function WorkoutDetails({
           />
         </div>
 
-        {/* Right - Information */}
+        {/* Details */}
         <div className="flex flex-col justify-center">
 
-          {/* Category Tags */}
+          {/* Categories */}
           <div className="mb-5 flex flex-wrap gap-2">
             {workout.muscleGroups.map((group) => (
               <span
@@ -103,7 +105,7 @@ export default async function WorkoutDetails({
             </h2>
 
             <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-zinc-800 bg-zinc-800">
-              
+
               <Spec
                 label="Equipment"
                 value={workout.equipment}
@@ -166,24 +168,8 @@ export default async function WorkoutDetails({
             </ol>
           </div>
 
-          {/* Action Buttons */}
-          <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-
-            <button
-              type="button"
-              className="flex flex-1 items-center justify-center gap-2 rounded-full bg-[#ccff00] px-6 py-4 text-sm font-black uppercase text-black transition hover:scale-[1.02]"
-            >
-              + Add to today&apos;s plan
-            </button>
-
-            <button
-              type="button"
-              className="flex flex-1 items-center justify-center gap-2 rounded-full border border-zinc-700 px-6 py-4 text-sm font-black uppercase text-white transition hover:border-[#ccff00] hover:text-[#ccff00]"
-            >
-              ♡ Save for later
-            </button>
-
-          </div>
+          {/* Functional Buttons */}
+          <WorkoutActions workoutId={workout.id} />
 
         </div>
       </div>

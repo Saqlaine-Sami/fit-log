@@ -2,16 +2,22 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useFitLog } from "../context/FitLogContext";
 
 export default function Navbar() {
   const pathname = usePathname();
+
+  const { plan, saved } = useFitLog();
 
   return (
     <nav className="border-b border-zinc-800 bg-black">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
 
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-3">
+        <Link
+          href="/"
+          className="flex items-center gap-3"
+        >
           <img
             src="/logo.png"
             alt="FitLog logo"
@@ -50,21 +56,21 @@ export default function Navbar() {
 
         </div>
 
-        {/* Status Badges */}
+        {/* Counters */}
         <div className="flex items-center gap-2">
 
           <Link
             href="/my-plan"
             className="rounded-full bg-[#ccff00] px-4 py-2 text-xs font-black tracking-wide text-black"
           >
-            PLAN 0
+            PLAN {plan.length}
           </Link>
 
           <Link
             href="/my-plan"
             className="rounded-full border border-zinc-600 px-4 py-2 text-xs font-black tracking-wide text-white"
           >
-            SAVED 0
+            SAVED {saved.length}
           </Link>
 
         </div>
