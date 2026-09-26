@@ -1,5 +1,6 @@
 import Hero from "./components/Hero";
 import WorkoutGrid from "./components/WorkoutGrid";
+import Footer from "./components/Footer";
 
 type Workout = {
   id: number;
@@ -39,6 +40,7 @@ export default async function Home() {
     <main className="min-h-screen bg-black">
       <Hero />
       <WorkoutGrid workouts={workouts} />
+      <Footer />
     </main>
   );
 }
