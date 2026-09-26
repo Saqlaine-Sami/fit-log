@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useFitLog } from "../context/FitLogContext";
 
@@ -20,84 +20,98 @@ type Workout = {
   instructions: string[];
 };
 
-export default function MyPlanPage() {
-  const { plan, saved, removeFromPlan, toggleSaved } = useFitLog();
+type Tab = "plan" | "saved";
 
-  const [planWorkouts, setPlanWorkouts] = useState<Workout[]>([]);
-  const [savedWorkouts, setSavedWorkouts] = useState<Workout[]>([]);
+export default function MyPlanPage() {
+  const {
+    plan,
+    saved,
+    completed,
+    removeFromPlan,
+    toggleSaved,
+    markAsDone,
+  } = useFitLog();
+
+  const [activeTab, setActiveTab] =
+    useState<Tab>("plan");
+
+  const [workouts, setWorkouts] = useState<Workout[]>(
+    []
+  );
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadWorkouts() {
       try {
-        const ids = [...new Set([...plan, ...saved])];
+        const response = await fetch(
+          "https://api.abcz.workers.dev/api/fitlog"
+        );
 
-        if (ids.length === 0) {
-          setPlanWorkouts([]);
-          setSavedWorkouts([]);
-          setLoading(false);
-          return;
+        if (!response.ok) {
+          throw new Error("Failed to fetch workouts");
         }
 
-        const responses = await Promise.all(
-          ids.map((id) =>
-            fetch(`https://api.abcz.workers.dev/api/fitlog/${id}`)
-          )
-        );
+        const data: Workout[] = await response.json();
 
-        const workouts = await Promise.all(
-          responses.map((response) => {
-            if (!response.ok) {
-              return null;
-            }
-
-            return response.json();
-          })
-        );
-
-        const validWorkouts = workouts.filter(
-          (workout): workout is Workout => workout !== null
-        );
-
-        setPlanWorkouts(
-          validWorkouts.filter((workout) =>
-            plan.includes(workout.id)
-          )
-        );
-
-        setSavedWorkouts(
-          validWorkouts.filter((workout) =>
-            saved.includes(workout.id)
-          )
-        );
+        setWorkouts(data);
       } catch (error) {
-        console.error("Failed to load workouts:", error);
+        console.error(
+          "Failed to load workouts:",
+          error
+        );
       } finally {
         setLoading(false);
       }
     }
 
     loadWorkouts();
-  }, [plan, saved]);
+  }, []);
 
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-black px-6 py-20">
-        <div className="mx-auto max-w-7xl">
-          <p className="text-center text-sm font-bold uppercase tracking-[0.2em] text-[#ccff00]">
-            Loading your plan...
-          </p>
-        </div>
-      </main>
-    );
-  }
+  const planWorkouts = useMemo(() => {
+    return plan
+      .map((id) =>
+        workouts.find((workout) => workout.id === id)
+      )
+      .filter(
+        (workout): workout is Workout =>
+          workout !== undefined
+      );
+  }, [plan, workouts]);
+
+  const savedWorkouts = useMemo(() => {
+    return saved
+      .map((id) =>
+        workouts.find((workout) => workout.id === id)
+      )
+      .filter(
+        (workout): workout is Workout =>
+          workout !== undefined
+      );
+  }, [saved, workouts]);
+
+  const currentWorkouts =
+    activeTab === "plan"
+      ? planWorkouts
+      : savedWorkouts;
+
+  const totalMinutes = planWorkouts.reduce(
+    (total, workout) => total + workout.duration,
+    0
+  );
+
+  const totalCalories = planWorkouts.reduce(
+    (total, workout) =>
+      total + workout.caloriesBurned,
+    0
+  );
 
   return (
     <main className="min-h-screen bg-black px-6 py-14 md:py-20">
       <div className="mx-auto max-w-7xl">
 
         {/* Header */}
-        <div className="mb-14">
+        <div className="mb-10">
           <p className="text-sm font-bold uppercase tracking-[0.25em] text-[#ccff00]">
             FitLog
           </p>
@@ -106,255 +120,276 @@ export default function MyPlanPage() {
             My Plan
           </h1>
 
-          <p className="mt-4 max-w-2xl text-zinc-500">
-            Manage your workout plan and saved exercises in one place.
+          <p className="mt-4 text-zinc-500">
+            Cap of five lifts for today. Finish them,
+            then load more.
           </p>
         </div>
 
-        {/* Today's Plan */}
-        <section>
-          <div className="mb-6">
-            <h2 className="text-2xl font-black uppercase text-white">
-              Today&apos;s Plan
-            </h2>
+        {/* Metrics */}
+        <div className="mb-10 grid gap-4 sm:grid-cols-3">
 
-            <p className="mt-1 text-sm text-zinc-500">
-              {planWorkouts.length} workout
-              {planWorkouts.length !== 1 ? "s" : ""}
-            </p>
+          <MetricCard
+            label="Exercises"
+            value={planWorkouts.length}
+          />
+
+          <MetricCard
+            label="Minutes"
+            value={totalMinutes}
+          />
+
+          <MetricCard
+            label="Calories"
+            value={totalCalories}
+          />
+
+        </div>
+
+        {/* Tabs */}
+        <div className="mb-8 flex gap-3 border-b border-zinc-800 pb-4">
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("plan")}
+            className={`rounded-full px-5 py-3 text-xs font-black uppercase transition ${
+              activeTab === "plan"
+                ? "bg-[#ccff00] text-black"
+                : "border border-zinc-700 text-zinc-400 hover:text-white"
+            }`}
+          >
+            Today&apos;s Plan
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("saved")}
+            className={`rounded-full px-5 py-3 text-xs font-black uppercase transition ${
+              activeTab === "saved"
+                ? "bg-[#ccff00] text-black"
+                : "border border-zinc-700 text-zinc-400 hover:text-white"
+            }`}
+          >
+            Saved
+          </button>
+
+        </div>
+
+        {/* Loading */}
+        {loading ? (
+          <LoadingState />
+        ) : currentWorkouts.length === 0 ? (
+          <EmptyState />
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2">
+
+            {currentWorkouts.map((workout) => (
+              <PlanWorkoutCard
+                key={workout.id}
+                workout={workout}
+                activeTab={activeTab}
+                isDone={completed.includes(workout.id)}
+                onDone={() =>
+                  markAsDone(workout.id)
+                }
+                onRemove={() => {
+                  if (activeTab === "plan") {
+                    removeFromPlan(workout.id);
+                  } else {
+                    toggleSaved(workout.id);
+                  }
+                }}
+              />
+            ))}
+
           </div>
-
-          {planWorkouts.length === 0 ? (
-            <EmptyState
-              title="Your plan is empty"
-              description="Add workouts to today's plan from any workout details page."
-            />
-          ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {planWorkouts.map((workout) => (
-                <PlanCard
-                  key={workout.id}
-                  workout={workout}
-                  onRemove={() => removeFromPlan(workout.id)}
-                />
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* Saved for Later */}
-        <section className="mt-20">
-          <div className="mb-6">
-            <h2 className="text-2xl font-black uppercase text-white">
-              Saved for Later
-            </h2>
-
-            <p className="mt-1 text-sm text-zinc-500">
-              {savedWorkouts.length} saved workout
-              {savedWorkouts.length !== 1 ? "s" : ""}
-            </p>
-          </div>
-
-          {savedWorkouts.length === 0 ? (
-            <EmptyState
-              title="Nothing saved yet"
-              description="Save workouts you want to come back to later."
-            />
-          ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {savedWorkouts.map((workout) => (
-                <SavedCard
-                  key={workout.id}
-                  workout={workout}
-                  onRemove={() => toggleSaved(workout.id)}
-                />
-              ))}
-            </div>
-          )}
-        </section>
+        )}
 
       </div>
     </main>
   );
 }
 
-function PlanCard({
+function MetricCard({
+  label,
+  value,
+}: {
+  label: string;
+  value: number;
+}) {
+  return (
+    <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-6">
+      <p className="text-xs font-bold uppercase tracking-wider text-zinc-600">
+        {label}
+      </p>
+
+      <p className="mt-3 text-4xl font-black text-white">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function LoadingState() {
+  return (
+    <div className="rounded-2xl border border-zinc-800 bg-zinc-950 px-6 py-20 text-center">
+
+      <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-zinc-700 border-t-[#ccff00]" />
+
+      <p className="mt-5 text-sm font-bold uppercase tracking-wider text-[#ccff00]">
+        Loading workouts…
+      </p>
+
+    </div>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-950 px-6 py-20 text-center">
+
+      <h2 className="text-2xl font-black uppercase text-white">
+        Nothing Here Yet
+      </h2>
+
+      <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-zinc-500">
+        Browse the library and add a lift to get
+        today moving.
+      </p>
+
+      <Link
+        href="/"
+        className="mt-7 inline-flex rounded-full bg-[#ccff00] px-7 py-3 text-xs font-black uppercase text-black"
+      >
+        Go to workouts
+      </Link>
+
+    </div>
+  );
+}
+
+function PlanWorkoutCard({
   workout,
+  activeTab,
+  isDone,
+  onDone,
   onRemove,
 }: {
   workout: Workout;
+  activeTab: Tab;
+  isDone: boolean;
+  onDone: () => void;
   onRemove: () => void;
 }) {
   return (
-    <article className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950">
+    <article
+      className={`overflow-hidden rounded-2xl border bg-zinc-950 ${
+        isDone
+          ? "border-[#ccff00]"
+          : "border-zinc-800"
+      }`}
+    >
+      <img
+        src={workout.image}
+        alt={workout.name}
+        className="h-60 w-full object-cover"
+      />
 
-      <Link href={`/workout/${workout.id}`}>
-        <img
-          src={workout.image}
-          alt={workout.name}
-          className="h-56 w-full object-cover transition duration-300 hover:scale-105"
-        />
-      </Link>
+      <div className="p-6">
 
-      <div className="p-5">
-
+        {/* Tags */}
         <div className="mb-3 flex flex-wrap gap-2">
           {workout.muscleGroups.map((group) => (
             <span
               key={group}
-              className="rounded-full border border-zinc-700 px-2.5 py-1 text-[10px] font-bold uppercase text-[#ccff00]"
+              className="rounded-full border border-zinc-700 px-3 py-1 text-[10px] font-bold uppercase text-[#ccff00]"
             >
               {group}
             </span>
           ))}
         </div>
 
-        <Link href={`/workout/${workout.id}`}>
-          <h3 className="text-xl font-black uppercase text-white hover:text-[#ccff00]">
-            {workout.name}
-          </h3>
-        </Link>
+        {/* Title */}
+        <h2 className="text-2xl font-black uppercase text-white">
+          {workout.name}
+        </h2>
 
-        <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
+        {/* Equipment */}
+        <p className="mt-2 text-sm text-zinc-500">
+          {workout.equipment}
+        </p>
+
+        {/* Stats */}
+        <div className="mt-5 grid grid-cols-3 gap-3 border-y border-zinc-800 py-5">
 
           <div>
-            <p className="text-zinc-600">SETS</p>
-            <p className="mt-1 font-bold text-white">
-              {workout.sets}
+            <p className="text-[10px] uppercase text-zinc-600">
+              Duration
             </p>
-          </div>
 
-          <div>
-            <p className="text-zinc-600">REPS</p>
-            <p className="mt-1 font-bold text-white">
-              {workout.reps}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-zinc-600">DURATION</p>
-            <p className="mt-1 font-bold text-white">
+            <p className="mt-1 text-sm font-bold text-white">
               {workout.duration} min
             </p>
           </div>
 
           <div>
-            <p className="text-zinc-600">CALORIES</p>
-            <p className="mt-1 font-bold text-white">
+            <p className="text-[10px] uppercase text-zinc-600">
+              Calories
+            </p>
+
+            <p className="mt-1 text-sm font-bold text-white">
               {workout.caloriesBurned} kcal
+            </p>
+          </div>
+
+          <div>
+            <p className="text-[10px] uppercase text-zinc-600">
+              Rating
+            </p>
+
+            <p className="mt-1 text-sm font-bold text-[#ccff00]">
+              ★ {workout.rating}
             </p>
           </div>
 
         </div>
 
-        <button
-          type="button"
-          onClick={onRemove}
-          className="mt-6 w-full rounded-full border border-red-900 px-4 py-3 text-xs font-black uppercase text-red-400 transition hover:bg-red-950"
-        >
-          Remove from plan
-        </button>
+        {/* Actions */}
+        <div className="mt-5 flex flex-wrap gap-3">
 
-      </div>
-    </article>
-  );
-}
+          <Link
+            href={`/workout/${workout.id}`}
+            className="flex-1 rounded-full border border-zinc-700 px-4 py-3 text-center text-xs font-black uppercase text-white transition hover:border-[#ccff00] hover:text-[#ccff00]"
+          >
+            View Details
+          </Link>
 
-function SavedCard({
-  workout,
-  onRemove,
-}: {
-  workout: Workout;
-  onRemove: () => void;
-}) {
-  return (
-    <article className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950">
-
-      <Link href={`/workout/${workout.id}`}>
-        <img
-          src={workout.image}
-          alt={workout.name}
-          className="h-56 w-full object-cover transition duration-300 hover:scale-105"
-        />
-      </Link>
-
-      <div className="p-5">
-
-        <div className="mb-3 flex flex-wrap gap-2">
-          {workout.muscleGroups.map((group) => (
-            <span
-              key={group}
-              className="rounded-full border border-zinc-700 px-2.5 py-1 text-[10px] font-bold uppercase text-[#ccff00]"
+          {activeTab === "plan" && (
+            <button
+              type="button"
+              onClick={onDone}
+              disabled={isDone}
+              className={`rounded-full px-4 py-3 text-xs font-black uppercase ${
+                isDone
+                  ? "cursor-default bg-[#ccff00] text-black"
+                  : "border border-zinc-700 text-white hover:border-[#ccff00] hover:text-[#ccff00]"
+              }`}
             >
-              {group}
-            </span>
-          ))}
-        </div>
+              {isDone ? "✓ Done" : "✓ Mark as Done"}
+            </button>
+          )}
 
-        <Link href={`/workout/${workout.id}`}>
-          <h3 className="text-xl font-black uppercase text-white hover:text-[#ccff00]">
-            {workout.name}
-          </h3>
-        </Link>
-
-        <p className="mt-3 line-clamp-2 text-sm leading-6 text-zinc-500">
-          {workout.description}
-        </p>
-
-        <div className="mt-4 flex items-center justify-between text-xs">
-
-          <span className="text-zinc-500">
-            {workout.difficulty}
-          </span>
-
-          <span className="font-bold text-[#ccff00]">
-            ★ {workout.rating}
-          </span>
+          <button
+            type="button"
+            onClick={onRemove}
+            className="rounded-full border border-red-900 px-4 py-3 text-xs font-black uppercase text-red-400 transition hover:bg-red-950"
+          >
+            X
+          </button>
 
         </div>
-
-        <button
-          type="button"
-          onClick={onRemove}
-          className="mt-6 w-full rounded-full border border-red-900 px-4 py-3 text-xs font-black uppercase text-red-400 transition hover:bg-red-950"
-        >
-          Remove from saved
-        </button>
 
       </div>
     </article>
-  );
-}
-
-function EmptyState({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-950 px-6 py-16 text-center">
-
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-zinc-900 text-xl text-[#ccff00]">
-        +
-      </div>
-
-      <h3 className="mt-5 text-xl font-black uppercase text-white">
-        {title}
-      </h3>
-
-      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-500">
-        {description}
-      </p>
-
-      <Link
-        href="/"
-        className="mt-6 inline-flex rounded-full bg-[#ccff00] px-6 py-3 text-xs font-black uppercase text-black"
-      >
-        Browse Workouts
-      </Link>
-
-    </div>
   );
 }
