@@ -5,7 +5,6 @@ import {
   useContext,
   useEffect,
   useState,
-  ReactNode,
 } from "react";
 
 type FitLogContextType = {
@@ -25,45 +24,47 @@ const FitLogContext = createContext<FitLogContextType | undefined>(
 export function FitLogProvider({
   children,
 }: {
-  children: ReactNode;
+  children: React.ReactNode;
 }) {
   const [plan, setPlan] = useState<number[]>([]);
   const [saved, setSaved] = useState<number[]>([]);
-
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     const storedPlan = localStorage.getItem("fitlog-plan");
     const storedSaved = localStorage.getItem("fitlog-saved");
 
     if (storedPlan) {
-      setPlan(JSON.parse(storedPlan));
+      try {
+        const parsedPlan = JSON.parse(storedPlan);
+
+        if (Array.isArray(parsedPlan)) {
+          setPlan(parsedPlan);
+        }
+      } catch {
+        localStorage.removeItem("fitlog-plan");
+      }
     }
 
     if (storedSaved) {
-      setSaved(JSON.parse(storedSaved));
-    }
+      try {
+        const parsedSaved = JSON.parse(storedSaved);
 
-    setMounted(true);
+        if (Array.isArray(parsedSaved)) {
+          setSaved(parsedSaved);
+        }
+      } catch {
+        localStorage.removeItem("fitlog-saved");
+      }
+    }
   }, []);
 
   useEffect(() => {
-    if (!mounted) return;
-
-    localStorage.setItem(
-      "fitlog-plan",
-      JSON.stringify(plan)
-    );
-  }, [plan, mounted]);
+    localStorage.setItem("fitlog-plan", JSON.stringify(plan));
+  }, [plan]);
 
   useEffect(() => {
-    if (!mounted) return;
-
-    localStorage.setItem(
-      "fitlog-saved",
-      JSON.stringify(saved)
-    );
-  }, [saved, mounted]);
+    localStorage.setItem("fitlog-saved", JSON.stringify(saved));
+  }, [saved]);
 
   function addToPlan(id: number) {
     setPlan((current) => {
