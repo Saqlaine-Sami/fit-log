@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { usePlan } from "./PlanContext";
+import Image from "next/image";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -16,11 +17,13 @@ export default function Navbar() {
           href="/"
           className="flex items-center gap-3"
         >
-          <img
-            src="/logo.png"
-            alt="FitLog"
-            className="h-10 w-10 object-contain"
-          />
+          <Image
+  src="/logo.png"
+  alt="FitLog"
+  width={40}
+  height={40}
+  className="h-10 w-10 object-contain"
+/>
 
           <span className="text-xl font-black tracking-tight text-white">
             FITLOG

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { usePlan } from "./PlanContext";
 import Toast from "./Toast";
+import Image from "next/image";
 
 type Tab = "plan" | "saved";
 
@@ -91,7 +92,7 @@ export default function PlanClient() {
               : "border-transparent text-zinc-500"
           }`}
         >
-          Today's Plan
+          today&apos;s Plan
         </button>
 
         <button
@@ -114,7 +115,7 @@ export default function PlanClient() {
             </h2>
 
             <p className="mt-3 text-zinc-500">
-              Browse the library and add a lift to get today moving.
+             Browse the library and add a lift to get today&apos;s moving.
             </p>
 
             <Link
@@ -134,11 +135,13 @@ export default function PlanClient() {
                   key={workout.id}
                   className="flex flex-col gap-5 rounded-2xl border border-zinc-800 bg-zinc-950 p-4 sm:flex-row sm:items-center"
                 >
-                  <img
-                    src={workout.image}
-                    alt={workout.name}
-                    className="h-32 w-full rounded-xl object-cover sm:h-28 sm:w-40"
-                  />
+                  <Image
+  src={workout.image}
+  alt={workout.name}
+  width={640}
+  height={360}
+  className="h-32 w-full rounded-xl object-cover sm:h-28 sm:w-40"
+/>
 
                   <div className="min-w-0 flex-1">
                     <h2

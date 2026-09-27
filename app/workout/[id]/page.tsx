@@ -3,25 +3,23 @@ import DetailClient from "@/components/DetailClient";
 import { getWorkout } from "@/lib/api";
 
 interface WorkoutPageProps {
-  params: Promise<{
-    id: string;
-  }>;
+  params: Promise<{ id: string }>;
 }
 
-export default async function WorkoutPage({
-  params,
-}: WorkoutPageProps) {
+export default async function WorkoutPage({ params }: WorkoutPageProps) {
   const { id } = await params;
 
+  let workout;
+
   try {
-    const workout = await getWorkout(id);
-
-    if (!workout) {
-      notFound();
-    }
-
-    return <DetailClient workout={workout} />;
+    workout = await getWorkout(id);
   } catch {
     notFound();
   }
+
+  if (!workout) {
+    notFound();
+  }
+
+  return <DetailClient workout={workout} />;
 }

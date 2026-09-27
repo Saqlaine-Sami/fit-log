@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Workout } from "@/lib/types";
+import Image from "next/image";
 
 interface WorkoutCardProps {
   workout: Workout;
@@ -16,11 +17,13 @@ export default function WorkoutCard({
       className="group block overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 transition hover:-translate-y-1 hover:border-[#ccff00]"
     >
       <div className="aspect-[4/3] overflow-hidden bg-zinc-900">
-        <img
-          src={workout.image}
-          alt={workout.name}
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-        />
+        <Image
+  src={workout.image}
+  alt={workout.name}
+  width={640}
+  height={480}
+  className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+/>
       </div>
 
       <div className="p-5">

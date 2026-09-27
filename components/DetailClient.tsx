@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Workout } from "@/lib/types";
 import { usePlan } from "./PlanContext";
 import Toast from "./Toast";
+import Image from "next/image";
 
 interface DetailClientProps {
   workout: Workout;
@@ -50,11 +51,13 @@ export default function DetailClient({ workout }: DetailClientProps) {
 
       <div className="grid gap-10 lg:grid-cols-2">
         <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950">
-          <img
-            src={workout.image}
-            alt={workout.name}
-            className="h-full max-h-[650px] w-full object-cover"
-          />
+         <Image
+  src={workout.image}
+  alt={workout.name}
+  width={1200}
+  height={900}
+  className="h-full max-h-[650px] w-full object-cover"
+/>
         </div>
 
         <div>

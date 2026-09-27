@@ -4,6 +4,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
   ReactNode,
 } from "react";
@@ -31,37 +32,41 @@ export function PlanProvider({
   const [plan, setPlan] = useState<Workout[]>([]);
   const [saved, setSaved] = useState<Workout[]>([]);
   const [done, setDone] = useState<string[]>([]);
+  const loadedRef = useRef(false);
+
+useEffect(() => {
+  const storedPlan = localStorage.getItem("fitlog-plan");
+  const storedSaved = localStorage.getItem("fitlog-saved");
+  const storedDone = localStorage.getItem("fitlog-done");
+
+  const savedPlan = storedPlan ? JSON.parse(storedPlan) : [];
+  const savedWorkouts = storedSaved ? JSON.parse(storedSaved) : [];
+  const completedWorkouts = storedDone ? JSON.parse(storedDone) : [];
+
+  const timeout = setTimeout(() => {
+    setPlan(savedPlan);
+    setSaved(savedWorkouts);
+    setDone(completedWorkouts);
+    loadedRef.current = true;
+  }, 0);
+
+  return () => clearTimeout(timeout);
+}, []);
 
   useEffect(() => {
-    const storedPlan = localStorage.getItem("fitlog-plan");
-    const storedSaved = localStorage.getItem("fitlog-saved");
-    const storedDone = localStorage.getItem("fitlog-done");
-
-    if (storedPlan) {
-      setPlan(JSON.parse(storedPlan));
-    }
-
-    if (storedSaved) {
-      setSaved(JSON.parse(storedSaved));
-    }
-
-    if (storedDone) {
-      setDone(JSON.parse(storedDone));
-    }
-  }, []);
+  if (!loadedRef.current) return;
+  localStorage.setItem("fitlog-plan", JSON.stringify(plan));
+}, [plan]);
 
   useEffect(() => {
-    localStorage.setItem("fitlog-plan", JSON.stringify(plan));
-  }, [plan]);
+  if (!loadedRef.current) return;
+  localStorage.setItem("fitlog-saved", JSON.stringify(saved));
+}, [saved]);
 
-  useEffect(() => {
-    localStorage.setItem("fitlog-saved", JSON.stringify(saved));
-  }, [saved]);
-
-  useEffect(() => {
-    localStorage.setItem("fitlog-done", JSON.stringify(done));
-  }, [done]);
-
+useEffect(() => {
+  if (!loadedRef.current) return;
+  localStorage.setItem("fitlog-done", JSON.stringify(done));
+}, [done]);
   function addToPlan(workout: Workout) {
     if (plan.length >= 5) {
       return false;

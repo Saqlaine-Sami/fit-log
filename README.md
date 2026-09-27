@@ -58,6 +58,3 @@ npm run build
 
 The project can be deployed using Vercel, Netlify, Cloudflare Pages, or another supported hosting platform.
 
-📬 Submission
-Live Link:
-GitHub Repository Link:
